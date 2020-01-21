@@ -1,0 +1,14 @@
+package: github.com/alexinteam/nats
+import:
+- package: github.com/ThreeDotsLabs/watermill
+  version: ^1.1.0
+  subpackages:
+  - message
+- package: github.com/ThreeDotsLabs/watermill-nats
+  version: ^1.0.5
+  subpackages:
+  - pkg/nats
+- package: github.com/nats-io/go-nats
+  version: ^1.7.2
+- package: github.com/nats-io/stan.go
+  version: ^0.6.0

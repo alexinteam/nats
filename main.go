@@ -1,66 +1,91 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"github.com/nats-io/go-nats"
-	"log"
-	"runtime"
+	"github.com/alexinteam/nats/cmd"
 )
 
-func usage_prod() {
-	log.Fatalf("Usage: nats-pub [-s server (%s)] [-u user (%s)] [-p password (%s)] -c produce <subject> <msg> \n", nats.DefaultURL, "nats", "S3Cr3TP@5w0rD")
-}
-
-func usage_con() {
-	log.Fatalf("Usage: nats-pub [-s server (%s)] [-u user (%s)] [-p password (%s)] -c consume <subject> \n", nats.DefaultURL, "nats", "S3Cr3TP@5w0rD")
-}
-
 func main() {
-	var urls = flag.String("s", nats.DefaultURL, "The nats server URLs (separated by comma)")
-	var authUser = flag.String("u", "nats", "The nats server authentication user for clients")
-	var authPassword = flag.String("p", "", "The nats server authentication password for clients")
-	var command = flag.String("c", "", "Whether to produce or consume a message")
-	log.SetFlags(0)
-	flag.Parse()
-	args := flag.Args()
-	if *command == "" {
-		log.Fatalf("Error: Indicate the command using '-command' flag")
-	}
-	if *command != "produce" && *command != "consume" {
-		log.Fatalf("Error: Supported commands are: consume & produce")
-	}
-	nc, err := nats.Connect(*urls, nats.UserInfo(*authUser, *authPassword))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Connected to NATS server: " + *urls)
-	if *command == "produce" {
-		if len(args) < 2 {
-			usage_prod()
-		}
-		subj, msg := args[0], []byte(args[1])
-		nc.Publish(subj, msg)
-		nc.Flush()
-		if err := nc.LastError(); err != nil {
-			log.Fatal(err)
-		} else {
-			log.Printf("Published [%s] : '%s'\n", subj, msg)
-		}
-	}
-	if *command == "consume" {
-		if len(args) < 1 {
-			usage_con()
-		}
-		subj := args[0]
-		nc.Subscribe(subj, func(msg *nats.Msg) {
-			log.Printf("Received message '%s\n", string(msg.Data)+"'")
-		})
-		nc.Flush()
-		if err := nc.LastError(); err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("Listening on [%s]\n", subj)
-		runtime.Goexit()
-	}
+	cmd.Execute()
 }
+
+//
+//import (
+//	"context"
+//	"log"
+//	"time"
+//
+//	stan "github.com/nats-io/stan.go"
+//
+//	"github.com/ThreeDotsLabs/watermill"
+//	"github.com/ThreeDotsLabs/watermill-nats/pkg/nats"
+//	"github.com/ThreeDotsLabs/watermill/message"
+//)
+//
+//func main() {
+//	subscriber, err := nats.NewStreamingSubscriber(
+//		nats.StreamingSubscriberConfig{
+//			ClusterID:        "test-cluster",
+//			ClientID:         "example-subscriber",
+//			QueueGroup:       "example",
+//			DurableName:      "my-durable",
+//			SubscribersCount: 4, // how many goroutines should consume messages
+//			CloseTimeout:     time.Minute,
+//			AckWaitTimeout:   time.Second * 30,
+//			StanOptions: []stan.Option{
+//				stan.NatsURL("nats://127.0.0.1:4222"),
+//			},
+//			Unmarshaler: nats.GobMarshaler{},
+//		},
+//		watermill.NewStdLogger(false, false),
+//	)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	messages, err := subscriber.Subscribe(context.Background(), "example.topic")
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	go process(messages)
+//
+//	publisher, err := nats.NewStreamingPublisher(
+//		nats.StreamingPublisherConfig{
+//			ClusterID: "test-cluster",
+//			ClientID:  "example-publisher",
+//			StanOptions: []stan.Option{
+//				stan.NatsURL("nats://127.0.0.1:4222"),
+//			},
+//			Marshaler: nats.GobMarshaler{},
+//		},
+//		watermill.NewStdLogger(false, false),
+//	)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	publishMessages(publisher)
+//}
+//
+//func publishMessages(publisher message.Publisher) {
+//	for {
+//		msg := message.NewMessage(watermill.NewUUID(), []byte("Hello, world!"))
+//
+//		if err := publisher.Publish("example.topic", msg); err != nil {
+//			panic(err)
+//		}
+//
+//		time.Sleep(time.Second * 10)
+//	}
+//}
+//
+//func process(messages <-chan *message.Message) {
+//	for msg := range messages {
+//		log.Printf("received message: %s, payload: %s", msg.UUID, string(msg.Payload))
+//
+//		// we need to Acknowledge that we received and processed the message,
+//		// otherwise, it will be resent over and over again.
+//		msg.Ack()
+//	}
+//}
+//
